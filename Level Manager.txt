@@ -1,0 +1,74 @@
+using UnityEngine;
+
+public class LevelManager : MonoBehaviour
+{
+    #region Custom Variables
+
+    [System.Serializable]
+    public struct LevelInfo
+    {
+        public string       levelName;
+        public GameObject   platformContainer;
+    }
+
+    #endregion
+
+    #region Public Variables
+
+    public LevelInfo[] levelInfos;
+
+    #endregion
+
+    #region Private Variables
+
+    private string TRACKER_FOR_LEVEL_INDEX = "TRACKER_FOR_LEVEL_INDEX";
+
+    #endregion
+
+
+    #region Public Callback
+
+    public int GetCurrentLevelIndex() {
+
+        return PlayerPrefs.GetInt(TRACKER_FOR_LEVEL_INDEX, 0);
+    }
+
+    public void GoToNextLevel() {
+
+        int t_CurrentLevelIndex = GetCurrentLevelIndex();
+        // if 0 (CurrentLevel) + 1 which is the next level is less than
+        // the total number of level, we are incrementing the value;
+        // For 0 + 1 = 1 < 10   (true)  : Next Level
+        // For 5 + 1 = 6 < 10   (true)  : Next Level
+        // For 9 + 1 = 10 < 10  (false) : Initial Level
+        if ((t_CurrentLevelIndex + 1) < levelInfos.Length)
+        {
+            PlayerPrefs.SetInt(TRACKER_FOR_LEVEL_INDEX, t_CurrentLevelIndex + 1);
+        }
+        else 
+        {
+            PlayerPrefs.SetInt(TRACKER_FOR_LEVEL_INDEX, 0);
+        }
+
+        ActivateLevel();
+    }
+
+    public void ActivateLevel()
+    {
+        int t_CurrentLevelIndex = GetCurrentLevelIndex();
+        for (int i = 0; i < levelInfos.Length; i++)
+        {
+
+            if (t_CurrentLevelIndex == i)
+            {
+                levelInfos[i].platformContainer.SetActive(true);
+            }
+            else
+            {
+                levelInfos[i].platformContainer.SetActive(false);
+            }
+        }
+    }
+
+    #endregion
+}

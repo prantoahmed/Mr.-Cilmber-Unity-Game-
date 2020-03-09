@@ -1,0 +1,99 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GameplayController : MonoBehaviour
+{
+    #region Public Variables
+
+    public static GameplayController Instance;
+
+    public UIMainMenuController UIMainMenuControllerReference;
+
+    [Space(5.0f)]
+    public LevelManager     levelManagerReference;
+    public PlayerController playerControllerReference;
+
+    #endregion
+
+    #region Private Variables
+
+    private int m_NumberOfPlatformToReach;
+    private int m_RemainingNumberOfPlatformToBeReached;
+
+    #endregion
+
+    #region Mono Behaviour
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else {
+            Destroy(gameObject);
+        }
+    }
+
+    #endregion
+
+    #region Configuretion
+
+    private IEnumerator ControllerForPreProcess() {
+
+        yield return new WaitForSeconds(1);
+
+        // CurrentLevel = 0
+        levelManagerReference.ActivateLevel();
+        int t_CurrentLevel = levelManagerReference.GetCurrentLevelIndex();
+        Debug.Log("CurrentLevel : " + t_CurrentLevel);
+        // NumberOfPlatformToReach = 2
+        m_NumberOfPlatformToReach = levelManagerReference.levelInfos[t_CurrentLevel].platformContainer.transform.childCount;
+        //RemainingNumberOfPlatformToBeReached = NumberOfPlatformToReach = 2
+        m_RemainingNumberOfPlatformToBeReached = m_NumberOfPlatformToReach;
+
+        playerControllerReference.PreProcess();
+
+        yield return null;
+    }
+
+    private IEnumerator ControllerForPostProcess() {
+
+        playerControllerReference.PostProcess();
+
+        yield return new WaitForSeconds(0.25f);
+
+        UIMainMenuControllerReference.AppearMainMenu();
+
+        yield return null;
+    }
+
+    #endregion
+
+    #region Public Callback
+
+    public void PreProcess()
+    {
+        StartCoroutine(ControllerForPreProcess());
+    }
+
+    public void PostProcess()
+    {
+        StartCoroutine(ControllerForPostProcess());
+    }
+
+    public void UpdateLevelProgression() {
+
+        m_RemainingNumberOfPlatformToBeReached--;
+        Debug.Log("RemainingNumberOfPlatformToBeReached = " + m_RemainingNumberOfPlatformToBeReached);
+        if (m_RemainingNumberOfPlatformToBeReached <= 0) {
+
+            Debug.Log("LevelComplete");
+            PostProcess();
+            levelManagerReference.GoToNextLevel();
+        }
+    }
+
+    #endregion
+}

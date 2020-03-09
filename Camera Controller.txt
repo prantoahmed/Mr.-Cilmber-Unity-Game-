@@ -1,0 +1,50 @@
+using UnityEngine;
+
+public class CameraController : MonoBehaviour
+{
+    #region Public Variables
+    public Transform    cameraTransformReference;
+    public Transform    targetTransformRefernece;
+    public Vector3      cameraOffSet;
+    public Vector3      cameraLookRotationOffset;
+    [Range(0f,1f)]
+    public float        cameraRotationSpeed;
+    #endregion
+
+    #region Private Variables
+    private Transform   m_CameraContainerTransformReference;
+    private Vector3     m_ModifiedPosition;
+    private Quaternion  m_ModifiedRoataion;
+    #endregion
+
+    #region MonoBehaviour
+    private void Awake()
+    {
+        m_CameraContainerTransformReference = transform;
+    }
+    //private void Update()
+    //{
+    //    m_ModifiedPosition = Vector3.Lerp(
+    //            m_CameraContainerTransformReference.position,
+    //            targetTransformRefernece.position + cameraOffSet,
+    //            cameraTransationSpeed * Time.deltaTime
+    //        );
+    //    m_CameraContainerTransformReference.position = m_ModifiedPosition;
+    //}
+
+    private void LateUpdate()
+    {
+        m_ModifiedPosition                              = targetTransformRefernece.position + cameraOffSet;
+        m_CameraContainerTransformReference.position    = m_ModifiedPosition;
+
+        m_ModifiedRoataion = Quaternion.Slerp(
+                cameraTransformReference.rotation,
+                Quaternion.LookRotation((targetTransformRefernece.position + cameraLookRotationOffset) - cameraTransformReference.position),
+                cameraRotationSpeed
+            );
+        cameraTransformReference.rotation = m_ModifiedRoataion;
+    }
+
+    #endregion
+}
+

@@ -1,0 +1,17 @@
+using UnityEngine;
+
+public class PlatformBeahaviour : MovingPatrol
+{
+
+    #region Mono Behaviour
+
+    private void Start()
+    {
+        base.PreProcess();
+    }
+
+    #endregion
+
+    
+
+}

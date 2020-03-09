@@ -1,0 +1,59 @@
+using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+public class UIMainMenuController : MonoBehaviour
+{
+    #region Public Variables
+
+    [Header("External Reference")]
+    public PlayerController playerControllerReference;
+
+    [Space(5.0f)]
+    public Animator animatorReference;
+    public Button   startButton;
+    public Button   jumpButton;
+
+    #endregion
+
+    #region Private Variables
+
+    #endregion
+
+    #region Mono Behaviour
+    private void Awake()
+    {
+        startButton.onClick.AddListener(delegate
+        {
+            DisappearMainMenu();
+            GameplayController.Instance.PreProcess();
+
+        });
+
+        jumpButton.onClick.AddListener(delegate
+        {
+            playerControllerReference.Jump();
+        });
+    }
+
+    #endregion
+
+    #region Configuration
+
+    #endregion
+
+    #region Public Callback
+
+    public void AppearMainMenu()
+    {
+        animatorReference.SetTrigger("APPEAR");
+    }
+
+    public void DisappearMainMenu() 
+    {
+        animatorReference.SetTrigger("DISAPPEAR");
+    }
+
+    #endregion
+}

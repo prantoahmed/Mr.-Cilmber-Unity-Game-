@@ -1,0 +1,205 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody))]
+public class PlayerController : MonoBehaviour
+{
+    /*
+    Animation Rotation (0.7,-0.7)
+    DirectionVector(
+        x = (0.7, -0.7) -> (-1,1),
+        y = 0.5,
+        z = 1,
+        )
+
+        Example:
+        Rotation = 45   , x = 0.5
+        Rotation = 0.5  , x = 0.5 / (-0.7) = 
+    */
+
+    #region Public Variables
+
+    public Animator     indicatorAnimator;
+    public Transform    indicator;
+    [Space(5.0f)]
+    [Range(0f,1f)]
+    public float        rangeOfJumpDirection = 0.125f;
+    [Range(0f,1f)]
+    public float        jumpHeight;
+    [Range(0f,2500f)]
+    public float        maxJumpVelocity;
+    public ForceMode    forceMode;
+
+    #endregion
+
+    #region Private Variables
+
+    private bool m_IsPlayerControllerRunning;
+    private bool m_IsPlayerAllowedToDie;
+    private bool m_IsJumpAllowed;
+
+    private Transform m_TransformReference;
+    private Rigidbody m_RigidbodyReference;
+
+    private Vector3     m_InitialPosition;
+    private Quaternion  m_InitialRotation;
+
+    #endregion
+
+    #region MonoBehaviour
+
+    private void Awake()
+    {
+        m_TransformReference = gameObject.GetComponent<Transform>();
+        m_RigidbodyReference = gameObject.GetComponent<Rigidbody>();
+
+        m_InitialPosition = m_TransformReference.position;
+        m_InitialRotation = m_TransformReference.rotation;
+
+    }
+
+    private void Update()
+    {
+        if (m_IsPlayerControllerRunning) {
+
+#if UNITY_EDITOR
+
+            //PC
+            if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                Jump();
+            }
+
+#elif UNITY_ANDROID || UNITY_IOS
+
+            //Mobile
+            if (Input.touchCount > 0) {
+
+                switch (Input.GetTouch(0).phase) {
+
+                    case TouchPhase.Began:
+                        Jump();
+                        break;
+                    case TouchPhase.Stationary:
+
+                        break;
+                    case TouchPhase.Moved:
+
+                        break;
+                    case TouchPhase.Ended:
+
+                        break;
+                    case TouchPhase.Canceled:
+
+                        break;
+
+                }
+            }
+#endif
+
+
+
+
+        }
+
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.collider.tag == "Tag_Platform")
+        {
+            m_TransformReference.SetParent(collision.transform);
+
+            if (!m_IsJumpAllowed)
+            {
+
+                m_IsJumpAllowed = true;
+                indicatorAnimator.SetTrigger("APPEAR");
+                GameplayController.Instance.UpdateLevelProgression();
+
+            }
+        }
+        else if (collision.collider.tag == "Tag_Enemy") {
+
+            m_TransformReference.SetParent(collision.transform);
+
+            if (m_IsPlayerAllowedToDie)
+            {
+                Debug.Log("Player Died : For Enemy");
+                GameplayController.Instance.PostProcess();
+
+            }
+        }
+        else if (collision.collider.tag == "Tag_Ground")
+        {
+
+            m_TransformReference.SetParent(collision.transform);
+
+            if (m_IsPlayerAllowedToDie)
+            {
+                Debug.Log("Player Died : For Ground");
+                GameplayController.Instance.PostProcess();
+
+            }
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Tag_Coin") {
+
+            Destroy(other.gameObject);
+        }
+    }
+
+    #endregion
+
+    #region Public Callback
+
+    public void ResetPlayerState() {
+
+        m_TransformReference.SetParent(null);
+        m_TransformReference.position = m_InitialPosition;
+        m_TransformReference.rotation = m_InitialRotation;
+    }
+
+    public void PreProcess() {
+
+        indicatorAnimator.SetTrigger("APPEAR");
+        m_IsPlayerControllerRunning = true;
+        m_IsPlayerAllowedToDie      = true;
+        m_IsJumpAllowed             = true;
+
+    }
+
+    public void PostProcess()
+    {
+        m_IsPlayerControllerRunning = false;
+        m_IsPlayerAllowedToDie      = false;
+        m_IsJumpAllowed             = false;
+        ResetPlayerState();
+    }
+
+    public void Jump() {
+
+        if (m_IsJumpAllowed) {
+
+            Vector3 t_Direction = new Vector3(
+                (indicator.rotation.z / (-0.7f)) * rangeOfJumpDirection,
+                jumpHeight,
+                1f - jumpHeight
+            );
+
+            m_RigidbodyReference.AddForce(
+                    t_Direction * maxJumpVelocity,
+                    forceMode
+                );
+
+            m_IsJumpAllowed = false;
+            indicatorAnimator.SetTrigger("DISAPPEAR");
+        }
+    }
+
+#endregion
+}

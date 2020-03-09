@@ -1,0 +1,142 @@
+using UnityEngine;
+using System.Collections;
+
+public class MovingPatrol : MonoBehaviour
+{
+
+    #region Public Variables
+
+    [Space(5.0f)]
+    [Header("Configuretion  :   MovingPatrol")]
+    [Range(0f, 10f)]
+    public float        movementVelocity;
+    [Range(0f,1f)]
+    public float        angulerVelocity = 0.1f;
+    public Vector3[]    movementPosition;
+
+    #endregion
+
+    #region Private Variables
+
+    private bool        m_IsMovementControllerRunning;
+
+    private Vector3     m_InitialPosition;
+
+    private Transform   m_TransformReference;
+    private Transform   m_MeshTransformReference;
+
+    #endregion
+
+    #region Mono Behaviour
+
+    private void Awake()
+    {
+        m_TransformReference    = transform;
+        m_InitialPosition       = m_TransformReference.position;
+    }
+
+    #endregion
+
+    #region Configuretion
+
+    private IEnumerator ControllerForPlatformMovement() {
+
+        float t_CycleLength = 0.0167f; // 1s / 60 frame = 0.0167f
+        WaitForSeconds t_CycleDelay = new WaitForSeconds(t_CycleLength);
+
+        int     t_MovementPositionIndex = 0;
+        bool    t_IsMovingTowardsInitialPosition = false;
+
+        Vector3 t_NewPosition;
+        Vector3 t_TargetedPosition = Vector3.zero;
+        Quaternion m_ModifiedRotation;
+
+        while (m_IsMovementControllerRunning) {
+
+            if (t_IsMovingTowardsInitialPosition)
+            {
+
+                t_TargetedPosition = m_InitialPosition;
+
+                //Move Towards the initial Position
+                t_NewPosition = Vector3.MoveTowards(
+                        m_TransformReference.position,
+                        m_InitialPosition,
+                        movementVelocity * Time.deltaTime
+                    );
+
+                m_TransformReference.position = t_NewPosition;
+
+                if (Vector3.Distance(t_NewPosition, m_InitialPosition) <= 0.1f)
+                {
+
+                    t_IsMovingTowardsInitialPosition = false;
+
+                    t_MovementPositionIndex++;
+                    if (t_MovementPositionIndex >= movementPosition.Length)
+                    {
+
+                        t_MovementPositionIndex = 0;
+                    }
+                }
+            }
+            else {
+
+                t_TargetedPosition = m_InitialPosition + movementPosition[t_MovementPositionIndex];
+
+                t_NewPosition = Vector3.MoveTowards(
+                       m_TransformReference.position,
+                       t_TargetedPosition,
+                       movementVelocity * Time.deltaTime
+                   );
+
+                m_TransformReference.position = t_NewPosition;
+
+                if (Vector3.Distance(t_NewPosition, t_TargetedPosition) <= 0.1f) {
+
+                    t_IsMovingTowardsInitialPosition = true;
+                }
+            }
+
+            if (m_MeshTransformReference != null) {
+
+                m_ModifiedRotation = Quaternion.Slerp(
+                        m_MeshTransformReference.rotation,
+                        Quaternion.LookRotation(t_TargetedPosition - m_MeshTransformReference.position),
+                        angulerVelocity
+                    );
+
+                m_MeshTransformReference.rotation = m_ModifiedRotation;
+            }
+
+            yield return t_CycleDelay;
+        }
+
+        StopCoroutine(ControllerForPlatformMovement());
+    }
+
+    #endregion
+
+    #region Public Callback
+
+    public void PreProcess(Transform t_MeshTransformReference = null) {
+
+        m_MeshTransformReference = t_MeshTransformReference;
+
+        if (movementPosition.Length > 0) {
+
+            if (!m_IsMovementControllerRunning)
+            {
+                m_IsMovementControllerRunning = true;
+                StartCoroutine(ControllerForPlatformMovement());
+            }
+        }
+    }
+
+    public void PostProcess()
+    {
+        m_IsMovementControllerRunning = false;
+    }
+
+    #endregion
+}
